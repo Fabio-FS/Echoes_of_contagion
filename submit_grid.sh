@@ -1,5 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=opinion_grid
+#SBATCH --partition=cpu
 #SBATCH --array=0-99
 #SBATCH --time=10:00:00
 #SBATCH --mem=3G
