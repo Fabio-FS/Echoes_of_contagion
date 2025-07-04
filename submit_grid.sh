@@ -3,7 +3,7 @@
 #SBATCH --partition=cpu
 #SBATCH --array=0-99
 #SBATCH --time=02:00:00
-#SBATCH --mem=2G
+#SBATCH --mem=8G
 #SBATCH --cpus-per-task=1
 #SBATCH --output=logs/job_%A_%a.out
 #SBATCH --error=logs/job_%A_%a.err

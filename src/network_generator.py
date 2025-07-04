@@ -609,38 +609,52 @@ def run_SIR_step(graph):
 
 def initialize_results(g, param):
     RES = {
-        'opinions': np.zeros((param["N_steps"], g["n_humans"])),
-        'health_states': np.zeros((param["N_steps"], g["n_humans"])),
-        'mean_opinion': np.zeros(param["N_steps"]),
-        'opinion_var': np.zeros(param["N_steps"]),
-        'fraction_ever_infected': np.zeros(param["N_steps"])  # Changed this line
+        'opinions': np.zeros((param["N_steps"], g["n_humans"]), dtype=np.float32),
+        'health_states': np.zeros((param["N_steps"], g["n_humans"]), dtype=np.int8),
+        'mean_opinion': np.zeros(param["N_steps"], dtype=np.float32),
+        'opinion_var': np.zeros(param["N_steps"], dtype=np.float32),
+        'fraction_ever_infected': np.zeros(param["N_steps"], dtype=np.float32)
     }
     return RES
 
 def update_RES(RES, g, step):
-    # Save key data
-    RES['opinions'][step] = g.vs['opinion'][:g["n_humans"]]
-    RES['health_states'][step] = g.vs['health_state'][:g["n_humans"]]
-    RES['mean_opinion'][step] = np.mean(g.vs['opinion'][:g["n_humans"]])
-    RES['opinion_var'][step] = np.var(g.vs['opinion'][:g["n_humans"]])
+    # Save key data with optimized data types
+    RES['opinions'][step] = np.array(g.vs['opinion'][:g["n_humans"]], dtype=np.float32)
+    RES['health_states'][step] = np.array(g.vs['health_state'][:g["n_humans"]], dtype=np.int8)
+    RES['mean_opinion'][step] = np.float32(np.mean(g.vs['opinion'][:g["n_humans"]]))
+    RES['opinion_var'][step] = np.float32(np.var(g.vs['opinion'][:g["n_humans"]]))
     
     # Track cumulative infections: I(t) + R(t) = N - S(t)
-    health_states = np.array(g.vs['health_state'][:g["n_humans"]])
+    health_states = np.array(g.vs['health_state'][:g["n_humans"]], dtype=np.int8)
     n_susceptible = np.sum(health_states == 0)
-    RES['fraction_ever_infected'][step] = (g["n_humans"] - n_susceptible) / g["n_humans"]  # Changed this line
-    
+    RES['fraction_ever_infected'][step] = np.float32((g["n_humans"] - n_susceptible) / g["n_humans"])
+
+ 
 
 
 def save_results(all_results, param, filename=None):
-    """Save results from multiple replicas and parameters to file"""
+    """Save results from multiple replicas and parameters to file with optimized data types"""
     if filename is None:
         filename = f"sim_n{param['n_humans']}_bots{param['n_bots']}_reps{param['n_of_replicas']}.pkl"
     
     os.makedirs("results", exist_ok=True)
     filepath = os.path.join("results", filename)
     
+    # Optimize data types before saving
+    optimized_results = []
+    for replica in all_results:
+        optimized_replica = {}
+        for key, value in replica.items():
+            if key in ['opinions', 'mean_opinion', 'opinion_var', 'fraction_ever_infected']:
+                optimized_replica[key] = value.astype(np.float32)
+            elif key == 'health_states':
+                optimized_replica[key] = value.astype(np.int8)
+            else:
+                optimized_replica[key] = value
+        optimized_results.append(optimized_replica)
+    
     data = {
-        'all_results': all_results,  # List of replica results
+        'all_results': optimized_results,  # List of optimized replica results
         'parameters': param
     }
     
@@ -650,10 +664,6 @@ def save_results(all_results, param, filename=None):
     print(f"Results from {len(all_results)} replicas saved to {filepath}")
 
 def load_results(filename):
-    """Load results from file"""
-    with open(filename, 'rb') as f:
-        data = pickle.load(f)
-    return data['all_results'], data['parameters']
     """Load results from file"""
     with open(filename, 'rb') as f:
         data = pickle.load(f)

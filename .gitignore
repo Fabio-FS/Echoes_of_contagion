@@ -1,5 +1,7 @@
 # Simulation results
 *.pkl
+*.pkl.filepart
+
 results/
 notebooks/results/
 
