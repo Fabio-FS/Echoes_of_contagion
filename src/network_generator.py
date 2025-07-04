@@ -19,7 +19,7 @@ def single_simulations_arrays(param):
     post_values, post_upvotes, post_readers = initialize_posts_arrays(g)
     RES = initialize_results(g, param)
     
-    for step in range(param["N_steps_total"]):
+    for step in range(param["N_steps"]):
         opinion_dynamic_step_arrays(g, post_values, post_upvotes, post_readers, step)
         if step >= param["waiting_time"]:
             disease_dynamic_step(g)

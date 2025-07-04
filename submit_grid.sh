@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=opinion_grid
-#SBATCH --array=0-49
-#SBATCH --time=02:00:00
-#SBATCH --mem=2G
+#SBATCH --array=0-99
+#SBATCH --time=10:00:00
+#SBATCH --mem=3G
 #SBATCH --cpus-per-task=1
 #SBATCH --output=logs/job_%A_%a.out
 #SBATCH --error=logs/job_%A_%a.err

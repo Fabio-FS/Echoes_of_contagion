@@ -6,9 +6,9 @@ from network_generator import simulations, save_results
 
 def generate_parameter_grid():
     """Generate all parameter combinations"""
-    comm_errors = [0.05, 0.1, 0.2, 0.3, 0.5]
-    thresholds = [-0.8, -0.6, -0.4, -0.2, 0.0]
-    n_bots = [0, 5, 10, 20, 30]
+    comm_errors = [0, 0.05, 0.1, 0.2]
+    thresholds = [-0.8, -0.4, 0, -0.4, 0.8]
+    n_bots = [0, 10, 20, 40, 80]
     
     # Create all combinations
     combinations = list(itertools.product(comm_errors, thresholds, n_bots))
@@ -23,7 +23,7 @@ def get_base_param():
     "n_bots" : 50,
     "nei" : 6,
     "p" : 0.05,
-    "N_steps_total" : 1000,
+    "N_steps" : 1000,
     "waiting_time" : 500,
     "mu" : 0.075,
     "epsilon": 0.3,
