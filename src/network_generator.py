@@ -19,29 +19,13 @@ def single_simulations_arrays(param):
     post_values, post_upvotes, post_readers = initialize_posts_arrays(g)
     RES = initialize_results(g, param)
     
-
-    #for v in g.vs:
-    #    # if human
-    #    if v["user_type"] == "human":
-    #        #  print "user $i [H] -- $NH [Human neighbors] -- $NB [Bot neighbors]"
-    #        print(f"user {v.index} [H] -- {len(v['human_neighbors'])} [Human neighbors] -- {len(v['bot_neighbors'])} [Bot neighbors]")
-    #    elif v["user_type"] == "bot":
-    #        print(f"user {v.index} [B] -- {len(v['human_neighbors'])} [Human neighbors] -- {len(v['bot_neighbors'])} [Bot neighbors]")
-    #    else:
-    #        print(f"user {v.index} [Unknown] -- {len(v['human_neighbors'])} [Human neighbors] -- {len(v['bot_neighbors'])} [Bot neighbors]")
-
-
-    for step in range(param["N_steps"]):
+    for step in range(param["N_steps_total"]):
         opinion_dynamic_step_arrays(g, post_values, post_upvotes, post_readers, step)
-        #if step > g["waiting_time"]:
-            #disease_dynamic_step(g)
-            #pass
+        if step >= param["waiting_time"]:
+            disease_dynamic_step(g)
         update_RES(RES, g, step)
-    
+
     return RES
-
-
-
 
 def initialize_system(param):
     g = create_network(param)
@@ -95,7 +79,7 @@ def initialize_users_and_bots(g, param):
     g["recovery_rate"] = param["recovery_rate"]
 
 
-    g["waiting_time"] = 30
+    g["waiting_time"] = param["waiting_time"]
 
 
     # select I0 initial infected
