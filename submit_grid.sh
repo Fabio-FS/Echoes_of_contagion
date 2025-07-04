@@ -12,7 +12,7 @@
 mkdir -p logs
 
 # Activate conda environment
-source ~/.bashrc
+source /opt/bwhpc/common/devel/miniforge/24.11.0-py3.12/etc/profile.d/conda.sh
 conda activate networks
 
 # Navigate to src directory  

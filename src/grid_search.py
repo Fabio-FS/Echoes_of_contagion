@@ -18,7 +18,7 @@ def generate_parameter_grid():
 def get_base_param():
     """Your base parameter dictionary"""
     return {
-    "n_of_replicas" : 20,
+    "n_of_replicas" : 100,
     "n_humans" : 1000,
     "n_bots" : 50,
     "nei" : 6,
