@@ -1,0 +1,32 @@
+# Simulation results
+*.pkl
+results/
+notebooks/results/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data files (optional - uncomment if you have large datasets)
+# *.csv
+# *.h5
+# *.parquet
