@@ -3,6 +3,8 @@ import itertools
 import sys
 import os
 from network_generator import simulations, save_results
+import datetime
+import glob
 
 def generate_parameter_grid():
     """Generate all parameter combinations"""
@@ -18,7 +20,7 @@ def generate_parameter_grid():
 def get_base_param():
     """Your base parameter dictionary"""
     return {
-    "n_of_replicas" : 10,
+    "n_of_replicas" : 100,
     "n_humans" : 1000,
     "n_bots" : 50,
     "nei" : 6,
@@ -36,8 +38,25 @@ def get_base_param():
     "feed_size": 5
 }
 
+def read_run_directories():
+    """Read the directory paths from the setup file"""
+    try:
+        with open("current_run_dirs.txt", "r") as f:
+            lines = f.read().strip().split("\n")
+            pickle_dir = lines[0]
+            log_dir = lines[1]
+            base_dir = lines[2]
+            return pickle_dir, log_dir, base_dir
+    except FileNotFoundError:
+        # Fallback to old behavior
+        return "results", "logs", "."
+
+
+
 def run_single_job(job_id):
     """Run simulation for a specific parameter combination"""
+    pickle_dir, log_dir, base_dir = read_run_directories()
+    
     combinations = generate_parameter_grid()
     
     if job_id >= len(combinations):
@@ -57,11 +76,12 @@ def run_single_job(job_id):
     # Run simulation
     results = simulations(param)
     
-    # Save with unique filename
+    # Save with unique filename and full path
     filename = f"results_ce{ce}_th{th}_nb{nb}_2025_07_04.pkl"
-    save_results(results, param, filename)
+    filepath = os.path.join(pickle_dir, filename)  # Add this line
+    save_results(results, param, filepath)         # Change this line
     
-    print(f"Job {job_id} completed: {filename}")
+    print(f"Job {job_id} completed: {filepath}")    # Change this line too
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
