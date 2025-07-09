@@ -104,6 +104,7 @@ def upvotes_bots_only(graph, post_values, post_upvotes):
     # STEP 2: Find ALL posts that meet bot criteria (vectorized comparison)
     # Shape: (n_humans,) boolean mask - True where bots should upvote
     # Advantage: NumPy's C-level comparison, much faster than Python loop
+    
     should_upvote = latest_opinions < bot_threshold
     
     # STEP 3: Use precomputed bot neighbor counts (NO list comprehension!)
