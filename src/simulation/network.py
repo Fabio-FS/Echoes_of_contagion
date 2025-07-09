@@ -87,47 +87,81 @@ def precompute_neighbors(g, param):
     # Store bot neighbor counts for all humans as numpy array for vectorized access
     # Shape: (n_humans,) - eliminates need for list comprehension in upvoting
     g["bot_neighbor_counts"] = np.array([len(g.vs[i]["bot_neighbors"]) for i in range(n_humans)])
+
+
 def initialize_users_and_bots(g, param):
-
     # general bits
-
     g["n_humans"] = param["n_humans"]
     g["n_bots"] = param["n_bots"]
 
-
-    # opinion bits
-    g.vs["opinion"]  = np.random.uniform(-1, 1, len(g.vs))      # for speed I give an opinion also to bots. it won't be used.
+    # opinion bits - NEW FLEXIBLE INITIALIZATION
+    g.vs["opinion"] = initialize_opinions(param, len(g.vs))
     
     g["communication_error"] = param["communication_error"]
-
     g["mu"] = param["mu"] # 0.1
     g["epsilon"] = param["epsilon"] #0.3
     g["bot_threshold"] = param["bot_threshold"]
     g["post_history"] = param["post_history"]
     g["feed_size"] = param["feed_size"]
-    
-
 
     # opinion to behavior bits
-
     g["O0"] = 0.0 
     g["behavior_strength"] = 2.0
 
     # disease bits
-
     g.vs['health_state'] = [0] * param["n_humans"] + [-1] * param["n_bots"]  # All human start susceptible, all bots start bots. # S=0, I=1, R=2, Bot=-1
     
     g["beta0"] = param["beta0"] #0.1
     g["recovery_rate"] = param["recovery_rate"]
-
-
     g["waiting_time"] = param["waiting_time"]
-
 
     # select I0 initial infected
     indx_inf = np.random.choice(param["n_humans"], param["I0"], replace=False)
-
     for i in indx_inf:
         g.vs[i]["health_state"] = 1
     g.vs["is_bot"] = [False] * param["n_humans"] + [True] * param["n_bots"]
 
+
+def initialize_opinions(param, n_total):
+    """Initialize opinions based on param settings"""
+    n_humans = param["n_humans"]
+    
+    # Check what type of initialization to use
+    if "opinion_init_type" not in param:
+        # Default: uniform distribution
+        opinions = np.random.uniform(-1, 1, n_total)
+    
+    elif param["opinion_init_type"] == "gaussian":
+        # Single Gaussian N(M, S)
+        M = param.get("opinion_mean", 0.0)
+        S = param.get("opinion_std", 0.5)
+        opinions = np.random.normal(M, S, n_total)
+        opinions = np.clip(opinions, -1, 1)  # Keep in valid range
+    
+    elif param["opinion_init_type"] == "bimodal":
+        # Sum of two Gaussians
+        M1 = param.get("opinion_mean1", -0.5)
+        S1 = param.get("opinion_std1", 0.2)
+        M2 = param.get("opinion_mean2", 0.5)
+        S2 = param.get("opinion_std2", 0.2)
+        weight1 = param.get("opinion_weight1", 0.5)  # Fraction from first Gaussian
+        
+        n_from_first = int(n_humans * weight1)
+        n_from_second = n_humans - n_from_first
+        
+        opinions_humans = np.concatenate([
+            np.random.normal(M1, S1, n_from_first),
+            np.random.normal(M2, S2, n_from_second)
+        ])
+        np.random.shuffle(opinions_humans)  # Mix the two groups
+        opinions_humans = np.clip(opinions_humans, -1, 1)
+        
+        # Add bot opinions (can be random or fixed)
+        bot_opinions = np.random.uniform(-1, 1, n_total - n_humans)
+        opinions = np.concatenate([opinions_humans, bot_opinions])
+    
+    else:
+        # Fallback to uniform
+        opinions = np.random.uniform(-1, 1, n_total)
+    
+    return opinions
