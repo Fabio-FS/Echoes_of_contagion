@@ -31,7 +31,7 @@ def single_simulations_arrays(param, save_trajectories=True):
     RES = initialize_results(g, param, save_trajectories=save_trajectories)
     
     for step in range(param["N_steps"]):
-        if step % 500 == 0:
+        if step % 50 == 0:
             print(f"Step {step} of {param['N_steps']}")
         opinion_dynamic_step_arrays(g, post_values, post_upvotes, post_readers, step)
         if step >= param["waiting_time"]:
@@ -204,9 +204,11 @@ def save_results(consolidated, filename=None):
         os.makedirs("results", exist_ok=True)
         filepath = os.path.join("results", filename)
     else:
-        # filename is already a full path from experiment script
+        # filename might be just a filename or a full path
         filepath = filename
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)  # Create parent directory
+        dirname = os.path.dirname(filepath)
+        if dirname:  # Only create directory if there is one
+            os.makedirs(dirname, exist_ok=True)
     
     with open(filepath, 'wb') as f:
         pickle.dump(consolidated, f)

@@ -3,7 +3,7 @@ import igraph as ig
 
 def select_posts_vectorized(graph, post_upvotes, post_readers):
     """Main dispatcher function"""
-    feed_algo = graph.get("feed_algorithm", "popularity")  # backward compatibility
+    feed_algo = graph["feed_algorithm"] if "feed_algorithm" in graph.attributes() else "popularity"
     
     if feed_algo == "popularity":
         return select_posts_popularity(graph, post_upvotes, post_readers)
