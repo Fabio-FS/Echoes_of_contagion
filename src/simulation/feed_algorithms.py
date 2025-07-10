@@ -1,8 +1,22 @@
 import numpy as np
 import igraph as ig
 
-
 def select_posts_vectorized(graph, post_upvotes, post_readers):
+    """Main dispatcher function"""
+    feed_algo = graph.get("feed_algorithm", "popularity")  # backward compatibility
+    
+    if feed_algo == "popularity":
+        return select_posts_popularity(graph, post_upvotes, post_readers)
+    elif feed_algo == "random":
+        return select_posts_random(graph, post_upvotes, post_readers)
+    elif feed_algo == "similarity":
+        return select_posts_similarity(graph, post_upvotes, post_readers)
+    else:
+        raise ValueError(f"Unknown feed algorithm: {feed_algo}")
+
+
+
+def select_posts_popularity(graph, post_upvotes, post_readers):
     """
     Select top k posts for each user based on upvotes and reading history.
     
@@ -137,9 +151,52 @@ def select_posts_vectorized(graph, post_upvotes, post_readers):
 
 
 
-def select_post_random(graph, post_upvotes, post_readers):
-    pass
+def select_posts_random(graph, post_upvotes, post_readers):
+    """
+    Vectorized random post selection with per-user randomization.
+    """
+    # ==================== SETUP PHASE ====================
+    k = graph["feed_size"]           
+    n_users = len(graph.vs)          
+    n_humans = graph["n_humans"]
+    n_posts = post_upvotes.shape[1]
+    
+    # ==================== RESULT ARRAYS INITIALIZATION ====================
+    selection_user_ids = np.full((n_users, k), -1, dtype=int)
+    selection_post_ids = np.full((n_users, k), -1, dtype=int)
+    
+    # ==================== VECTORIZED PROCESSING ====================
+    
+    # Pre-create all possible posts
+    all_users = np.repeat(np.arange(n_humans), n_posts)
+    all_times = np.tile(np.arange(n_posts), n_humans)
+    
+    for user_i in range(n_users):
+        
+        # STEP 1: Filter to neighbor posts (vectorized)
+        is_from_neighbor = graph["neighbor_lookup"][user_i, all_users]
+        neighbor_users = all_users[is_from_neighbor]
+        neighbor_times = all_times[is_from_neighbor]
+        
+        if len(neighbor_users) == 0:
+            continue
+        
+        # STEP 2: Filter out read posts (vectorized)
+        is_read = post_readers[neighbor_users, neighbor_times, user_i]
+        unread_mask = ~is_read
+        unread_users = neighbor_users[unread_mask]
+        unread_times = neighbor_times[unread_mask]
+        
+        # STEP 3: Random shuffle THIS USER'S available posts
+        if len(unread_users) > 0:
+            perm = np.random.permutation(len(unread_users))
+            n_selected = min(k, len(unread_users))
+            
+            selection_user_ids[user_i, :n_selected] = unread_users[perm[:n_selected]]
+            selection_post_ids[user_i, :n_selected] = unread_times[perm[:n_selected]]
+    
+    return selection_user_ids, selection_post_ids
 
-def select_post_similarity(graph, post_upvotes, post_readers):
+def select_posts_similarity(graph, post_upvotes, post_readers):
     pass
 

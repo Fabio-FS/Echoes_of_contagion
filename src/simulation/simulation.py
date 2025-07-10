@@ -200,9 +200,13 @@ def save_results(consolidated, filename=None):
     if filename is None:
         param = consolidated['parameters']
         filename = f"consolidated_n{param['n_humans']}_bots{param['n_bots']}_reps{consolidated['n_replicas']}.pkl"
-    
-    os.makedirs("results", exist_ok=True)
-    filepath = os.path.join("results", filename)
+        
+        os.makedirs("results", exist_ok=True)
+        filepath = os.path.join("results", filename)
+    else:
+        # filename is already a full path from experiment script
+        filepath = filename
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)  # Create parent directory
     
     with open(filepath, 'wb') as f:
         pickle.dump(consolidated, f)
