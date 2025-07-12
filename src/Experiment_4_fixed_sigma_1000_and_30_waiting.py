@@ -13,7 +13,7 @@ def generate_parameter_grid():
     """Generate all parameter combinations for larger networks experiment"""
     comm_errors = [0.2]
     thresholds = [-0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8]
-    n_bots = [0, 1, 2, 4, 8, 16, 32]
+    n_bots = [0, 1, 2, 4, 8, 16, 32, 64]
     
     combinations = list(itertools.product(comm_errors, thresholds, n_bots))
     print(f"Total combinations: {len(combinations)}")
@@ -22,22 +22,22 @@ def generate_parameter_grid():
 def get_base_param():
     """Base parameters for larger networks"""
     return {
-        "n_of_replicas": 100,  # Fewer replicas due to larger size
-        "n_humans": 100,      # LARGER NETWORK
-        "n_bots": 10,         # Will be overridden by grid
-        "nei": 6,             # More neighbors for larger network
+        "n_of_replicas": 10,            # Fewer replicas due to larger size
+        "n_humans": 100,                # LARGER NETWORK
+        "n_bots": 10,                   # Will be overridden by grid
+        "nei": 6,                       # More neighbors for larger network
         "p": 0.05,
-        "N_steps": 10000,      # More steps for larger system
-        "waiting_time": 208,    # 208 time steps = 52 days for the news about the virus to spread before the virus arrives
-                                #December 31, 2019: China reported cluster in Wuhan
-                                #February 21, 2020: First Italian COVID case diagnosed in Codogno (38-year-old Mattia Maestri)
+        "N_steps": 10000,               # More steps for larger system
+        "waiting_time": 208,            # 208 time steps = 52 days for the news about the virus to spread before the virus arrives
+                                        #December 31, 2019: China reported cluster in Wuhan
+                                        #February 21, 2020: First Italian COVID case diagnosed in Codogno (38-year-old Mattia Maestri)
         "mu": 0.075,
         "epsilon": 0.3,
-        "bot_threshold": -0.5,  # Will be overridden by grid
-        "beta0": 0.0125,            # R0 = 3, but 6 hours time step now
+        "bot_threshold": -0.5,          # Will be overridden by grid
+        "beta0": 0.0125,                # R0 = 3, but 6 hours time step now
         "recovery_rate": 0.025,
-        "I0": 2,              # More initial infected
-        "communication_error": 0.2,  # Will be overridden by grid
+        "I0": 2,                        # More initial infected
+        "communication_error": 0.2,     # Will be overridden by grid
         "post_history": 10,
         "feed_size": 5
     }

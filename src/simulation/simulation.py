@@ -31,7 +31,7 @@ def single_simulations_arrays(param, save_trajectories=True):
     RES = initialize_results(g, param, save_trajectories=save_trajectories)
     
     for step in range(param["N_steps"]):
-        if step % 50 == 0:
+        if step % 500 == 0:
             print(f"Step {step} of {param['N_steps']}")
         opinion_dynamic_step_arrays(g, post_values, post_upvotes, post_readers, step)
         if step >= param["waiting_time"]:

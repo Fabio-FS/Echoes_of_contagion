@@ -8,8 +8,7 @@ from numba import jit
 def update_susceptibilities_jit(opinions, beta0, O0, behavior_strength):
     """JIT-compiled susceptibility calculation"""
     # behavior represent the fraction of time spent wearing a "perfect" mask that sets beta0 to 0.
-    behavior = 1 / (1 + np.exp(-behavior_strength * (opinions - O0))) # Vectorized logistic function
-    susceptibilities = beta0 * (1 - behavior) # Vectorized susceptibility calculation
+    susceptibilities = beta0 * (1 - opinions) # Vectorized susceptibility calculation
     return susceptibilities
 
 def disease_dynamic_step(graph):

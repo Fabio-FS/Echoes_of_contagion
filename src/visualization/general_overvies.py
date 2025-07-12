@@ -136,7 +136,7 @@ def plot_bin_evolution_detailed(consolidated, figsize=(12, 8)):
 def plot_heatmap_grid(data_dict, param1_values=None, param2_values=None, 
                      param1_name="param1", param2_name="param2",
                      title="Opinion Distribution Evolution", figsize=None,
-                     param1_is_rows=True):
+                     param1_is_rows=True, max_time_steps=None):
     """
     Generic function to plot heatmaps of opinion bin trajectories in a grid.
     
@@ -150,20 +150,14 @@ def plot_heatmap_grid(data_dict, param1_values=None, param2_values=None,
     - figsize: figure size (auto-calculated if None)
     - param1_is_rows: if True, param1 varies along rows (y-axis), param2 along columns (x-axis)
                      if False, param1 varies along columns (x-axis), param2 along rows (y-axis)
+    - max_time_steps: if None, show all time steps; if int, show only first N time steps
     
     Examples:
-    # param1 as rows, param2 as columns (default)
-    plot_heatmap_grid(ic_data, 
-                     param1_values=[0.1, 0.5],      # rows (y-axis) 
-                     param2_values=[-0.9, 0, 0.9],  # columns (x-axis)
+    # Show only first 1000 time steps
+    plot_heatmap_grid(ic_data, max_time_steps=1000,
+                     param1_values=[0.1, 0.5],      
+                     param2_values=[-0.9, 0, 0.9],  
                      param1_name="var", param2_name="mean")
-    
-    # param1 as columns, param2 as rows 
-    plot_heatmap_grid(ic_data,
-                     param1_values=[-0.9, 0, 0.9],  # columns (x-axis)
-                     param2_values=[0.1, 0.5],      # rows (y-axis)
-                     param1_name="mean", param2_name="var",
-                     param1_is_rows=False)
     """
     
     # Auto-detect parameters if not provided
@@ -260,7 +254,6 @@ def plot_heatmap_grid(data_dict, param1_values=None, param2_values=None,
                     key = (row_val, col_val)  # (th, nb)
                 else:
                     key = (col_val, row_val)  # (nb, th) if flipped
-                
             
             if key is not None and key in data_dict:
                 consolidated = data_dict[key]
@@ -271,9 +264,18 @@ def plot_heatmap_grid(data_dict, param1_values=None, param2_values=None,
                 # Calculate average opinion bins across replicas
                 avg_opinion_bins = np.mean(consolidated['opinion_bins'], axis=0)
                 
+                # Apply time step limit if specified
+                if max_time_steps is not None:
+                    avg_opinion_bins = avg_opinion_bins[:max_time_steps, :]
+                    time_extent_max = max_time_steps - 1
+                    time_title_suffix = f" (first {max_time_steps} steps)"
+                else:
+                    time_extent_max = avg_opinion_bins.shape[0] - 1
+                    time_title_suffix = ""
+                
                 # Create heatmap
                 im = ax.imshow(avg_opinion_bins.T, aspect='auto', origin='lower',
-                              extent=[0, avg_opinion_bins.shape[0]-1, 0, avg_opinion_bins.shape[1]-1],
+                              extent=[0, time_extent_max, 0, avg_opinion_bins.shape[1]-1],
                               cmap='viridis', interpolation='none', vmin=0, vmax=0.35)
                 
                 # Add colorbar for rightmost plots
@@ -283,12 +285,12 @@ def plot_heatmap_grid(data_dict, param1_values=None, param2_values=None,
                 
                 # Set title
                 if col_val is None:
-                    title_str = f'{row_name} = {row_val}\npolarization var = {polarization_var:.3f}'
+                    title_str = f'{row_name} = {row_val}\npolarization var = {polarization_var:.3f}{time_title_suffix}'
                 elif row_val is None:
-                    title_str = f'{col_name} = {col_val}\npolarization var = {polarization_var:.3f}'
+                    title_str = f'{col_name} = {col_val}\npolarization var = {polarization_var:.3f}{time_title_suffix}'
                 else:
-                    title_str = f'{row_name} = {row_val}, {col_name} = {col_val}\npolarization var = {polarization_var:.3f}'
-                ax.set_title(title_str)
+                    title_str = f'{row_name} = {row_val}, {col_name} = {col_val}\npolarization var = {polarization_var:.3f}{time_title_suffix}'
+                ax.set_title(title_str, fontsize=10)
                 
                 # Set y-axis labels to show bin ranges
                 bin_edges = consolidated['bin_edges']
@@ -314,6 +316,8 @@ def plot_heatmap_grid(data_dict, param1_values=None, param2_values=None,
     plt.tight_layout()
     plt.show()
     return fig, axs
+
+
 
 def calculate_polarization_variance(consolidated):
     """
@@ -461,10 +465,21 @@ def load_simulation_data(data_dir, file_pattern, param_names, date_suffix="None"
 def plot_epidemic_grid(data_dict, param1_values=None, param2_values=None, 
                       param1_name="param1", param2_name="param2",
                       title="Epidemic Curves: E[I(t) + R(t)]", figsize=None,
-                      param1_is_rows=True):
+                      param1_is_rows=True, max_time_steps=None):
     """
     Generic function to plot epidemic curves E[I(t) + R(t)] in a grid.
     Same signature as plot_heatmap_grid but shows infection curves instead.
+    
+    Parameters:
+    - data_dict: dictionary with parameter tuple keys
+    - param1_values: list of values for first parameter 
+    - param2_values: list of values for second parameter
+    - param1_name: name of first parameter for labels
+    - param2_name: name of second parameter for labels
+    - title: plot title
+    - figsize: figure size (auto-calculated if None)
+    - param1_is_rows: if True, param1 varies along rows (y-axis), param2 along columns (x-axis)
+    - max_time_steps: if None, show all time steps; if int, show only first N time steps
     """
     
     # Auto-detect parameters if not provided
@@ -545,32 +560,42 @@ def plot_epidemic_grid(data_dict, param1_values=None, param2_values=None,
                 
                 # Calculate E[I(t) + R(t)] across replicas
                 infected_plus_recovered = consolidated['I_count'] + consolidated['R_count']
-                mean_infected_recovered = np.mean(infected_plus_recovered, axis=0)
-                std_infected_recovered = np.std(infected_plus_recovered, axis=0)
+                
+                # Calculate median and quartiles instead of mean ± std
+                median_infected_recovered = np.median(infected_plus_recovered, axis=0)
+                q1_infected_recovered = np.percentile(infected_plus_recovered, 25, axis=0)
+                q3_infected_recovered = np.percentile(infected_plus_recovered, 75, axis=0)
+                
+                # Apply time step limit if specified
+                if max_time_steps is not None:
+                    median_infected_recovered = median_infected_recovered[:max_time_steps]
+                    q1_infected_recovered = q1_infected_recovered[:max_time_steps]
+                    q3_infected_recovered = q3_infected_recovered[:max_time_steps]
+                    time_title_suffix = f" (first {max_time_steps} steps)"
+                else:
+                    time_title_suffix = ""
                 
                 # Time steps
-                t = np.arange(len(mean_infected_recovered))
+                t = np.arange(len(median_infected_recovered))
                 
-                # Plot mean curve
-                ax.plot(t, mean_infected_recovered, 'b-', linewidth=2)
+                # Plot median curve
+                ax.plot(t, median_infected_recovered, 'b-', linewidth=2, label='Median')
                 
-                # Add confidence interval (mean ± std)
-                ax.fill_between(t, 
-                               mean_infected_recovered - std_infected_recovered,
-                               mean_infected_recovered + std_infected_recovered,
-                               alpha=0.3, color='blue')
+                # Add interquartile range (Q1 to Q3)
+                ax.fill_between(t, q1_infected_recovered, q3_infected_recovered,
+                               alpha=0.3, color='blue', label='IQR (Q1-Q3)')
                 
-                # Final attack rate (percentage)
-                final_attack_rate = mean_infected_recovered[-1] / consolidated['parameters']['n_humans'] * 100
+                # Final attack rate (percentage) - use the actual final median value shown
+                final_attack_rate = median_infected_recovered[-1] / consolidated['parameters']['n_humans'] * 100
                 
                 # Set title
                 if col_val is None:
-                    title_str = f'{row_name} = {row_val}\nFinal: {final_attack_rate:.1f}%'
+                    title_str = f'{row_name} = {row_val}\nFinal: {final_attack_rate:.1f}%{time_title_suffix}'
                 elif row_val is None:
-                    title_str = f'{col_name} = {col_val}\nFinal: {final_attack_rate:.1f}%'
+                    title_str = f'{col_name} = {col_val}\nFinal: {final_attack_rate:.1f}%{time_title_suffix}'
                 else:
-                    title_str = f'{row_name} = {row_val}, {col_name} = {col_val}\nFinal: {final_attack_rate:.1f}%'
-                ax.set_title(title_str)
+                    title_str = f'{row_name} = {row_val}, {col_name} = {col_val}\nFinal: {final_attack_rate:.1f}%{time_title_suffix}'
+                ax.set_title(title_str, fontsize=10)
                 
                 ax.set_ylim(0, consolidated['parameters']['n_humans'])
                 ax.grid(True, alpha=0.3)
@@ -591,6 +616,153 @@ def plot_epidemic_grid(data_dict, param1_values=None, param2_values=None,
     plt.tight_layout()
     plt.show()
     return fig, axs
+
+
+def plot_epidemic_heatmap(data_dict, param1_values=None, param2_values=None, 
+                         param1_name="param1", param2_name="param2",
+                         title="Final Attack Rate: Median Fraction Infected", figsize=None,
+                         param1_is_rows=True):
+    """
+    Plot heatmap of final attack rates (median fraction infected at equilibrium).
+    
+    Parameters:
+    - data_dict: dictionary with parameter tuple keys
+    - param1_values: list of values for first parameter 
+    - param2_values: list of values for second parameter
+    - param1_name: name of first parameter for labels
+    - param2_name: name of second parameter for labels
+    - title: plot title
+    - figsize: figure size (auto-calculated if None)
+    - param1_is_rows: if True, param1 varies along rows (y-axis), param2 along columns (x-axis)
+    """
+    
+    # Auto-detect parameters if not provided
+    if param1_values is None or param2_values is None:
+        all_keys = list(data_dict.keys())
+        if not all_keys:
+            print("No data found!")
+            return None, None
+            
+        if not isinstance(all_keys[0], tuple):
+            if param1_values is None:
+                param1_values = sorted(set(all_keys))
+            if param2_values is None:
+                param2_values = [None]
+        else:
+            if param1_values is None:
+                param1_values = sorted(set(key[0] for key in all_keys))
+            if param2_values is None:
+                if len(all_keys[0]) >= 2:
+                    param2_values = sorted(set(key[1] for key in all_keys))
+                else:
+                    param2_values = [None]
+    
+    # Determine which values go on rows vs columns
+    if param1_is_rows:
+        row_values = param1_values
+        col_values = param2_values
+        row_name = param1_name
+        col_name = param2_name
+    else:
+        row_values = param2_values
+        col_values = param1_values
+        row_name = param2_name
+        col_name = param1_name
+    
+    n_rows = len(row_values)
+    n_cols = len(col_values)
+    
+    # Initialize matrix to store final attack rates
+    attack_rate_matrix = np.full((n_rows, n_cols), np.nan)
+    
+    # Fill the matrix
+    for i, row_val in enumerate(row_values):
+        for j, col_val in enumerate(col_values):
+            
+            # Create key for data lookup
+            if col_val is None:
+                key = row_val
+            elif row_val is None:
+                key = col_val
+            else:
+                if param1_is_rows:
+                    key = (row_val, col_val)
+                else:
+                    key = (col_val, row_val)
+            
+            if key is not None and key in data_dict:
+                consolidated = data_dict[key]
+                
+                # Calculate final attack rate (median across replicas)
+                infected_plus_recovered = consolidated['I_count'] + consolidated['R_count']
+                final_infected_recovered = infected_plus_recovered[:, -1]  # Last time step for each replica
+                median_final = np.median(final_infected_recovered)
+                
+                # Convert to fraction
+                attack_rate_fraction = median_final / consolidated['parameters']['n_humans']
+                attack_rate_matrix[i, j] = attack_rate_fraction
+    
+    # Auto-calculate figure size
+    if figsize is None:
+        figsize = (max(8, n_cols * 1.2), max(6, n_rows * 1.2))
+    
+    # Create the plot
+    fig, ax = plt.subplots(figsize=figsize)
+    
+    # Create heatmap
+    im = ax.imshow(attack_rate_matrix, cmap='viridis', aspect='auto', 
+                   vmin=0, vmax=1, interpolation='nearest')
+    
+    # Set ticks and labels
+    ax.set_xticks(range(n_cols))
+    ax.set_yticks(range(n_rows))
+    ax.set_xticklabels([str(val) for val in col_values])
+    ax.set_yticklabels([str(val) for val in row_values])
+    
+    # Add text annotations with percentages
+    for i in range(n_rows):
+        for j in range(n_cols):
+            if not np.isnan(attack_rate_matrix[i, j]):
+                percentage = attack_rate_matrix[i, j] * 100
+                text_color = 'white' if attack_rate_matrix[i, j] > 0.5 else 'black'
+                ax.text(j, i, f'{percentage:.1f}%', ha='center', va='center',
+                       color=text_color, fontweight='bold')
+            else:
+                ax.text(j, i, 'N/A', ha='center', va='center',
+                       color='red', fontweight='bold')
+    
+    # Labels and title
+    ax.set_xlabel(col_name)
+    ax.set_ylabel(row_name)
+    ax.set_title(title)
+    
+    # Add colorbar
+    cbar = plt.colorbar(im, ax=ax, shrink=0.8)
+    cbar.set_label('Final Attack Rate (Fraction)', rotation=270, labelpad=20)
+    
+    # Format colorbar ticks as percentages
+    cbar_ticks = np.arange(0, 1.1, 0.2)
+    cbar.set_ticks(cbar_ticks)
+    cbar.set_ticklabels([f'{tick*100:.0f}%' for tick in cbar_ticks])
+    
+    plt.tight_layout()
+    plt.show()
+    
+    return fig, ax, attack_rate_matrix
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
