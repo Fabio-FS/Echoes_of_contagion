@@ -7,7 +7,7 @@ import datetime
 import glob
 
 # Experiment-specific settings
-EXPERIMENT_NAME = "fixed_sigma_1000_Agents"
+EXPERIMENT_NAME = "fixed_sigma_100_Agents_no_sigmoid"
 
 def generate_parameter_grid():
     """Generate all parameter combinations for larger networks experiment"""

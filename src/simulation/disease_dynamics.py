@@ -5,10 +5,10 @@ from numba import jit
 
 
 @jit(nopython=True)
-def update_susceptibilities_jit(opinions, beta0, O0, behavior_strength):
+def update_susceptibilities_jit(opinions, beta0):
     """JIT-compiled susceptibility calculation"""
     # behavior represent the fraction of time spent wearing a "perfect" mask that sets beta0 to 0.
-    susceptibilities = beta0 * (1 - opinions) # Vectorized susceptibility calculation
+    susceptibilities = beta0 * (1 - (opinions + 1)/2)   # Vectorized susceptibility calculation
     return susceptibilities
 
 def disease_dynamic_step(graph):
@@ -17,14 +17,13 @@ def disease_dynamic_step(graph):
 
 def update_susceptibilities(graph):
     beta0 = graph["beta0"]
-    O0 = graph["O0"]
-    behavior_strength = graph["behavior_strength"]
+
     
     # Get all human opinions as numpy array
     opinions = np.array(graph.vs['opinion'])  # I also take the opinion of bots. To use numpy vectorization, but their susceptibilities will never be used.
 
     # Use JIT-compiled function
-    susceptibilities = update_susceptibilities_jit(opinions, beta0, O0, behavior_strength)
+    susceptibilities = update_susceptibilities_jit(opinions, beta0)
     
     # Store back to graph - THIS WAS MISSING!
     graph.vs['susceptibility'] = susceptibilities
