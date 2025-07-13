@@ -696,10 +696,10 @@ def plot_epidemic_heatmap(data_dict, param1_values=None, param2_values=None,
                 # Calculate final attack rate (median across replicas)
                 infected_plus_recovered = consolidated['I_count'] + consolidated['R_count']
                 final_infected_recovered = infected_plus_recovered[:, -1]  # Last time step for each replica
-                median_final = np.median(final_infected_recovered)
+                mean_final = np.mean(final_infected_recovered)
                 
                 # Convert to fraction
-                attack_rate_fraction = median_final / consolidated['parameters']['n_humans']
+                attack_rate_fraction = mean_final / consolidated['parameters']['n_humans']
                 attack_rate_matrix[i, j] = attack_rate_fraction
     
     # Auto-calculate figure size
