@@ -7,7 +7,7 @@ import datetime
 import glob
 
 # Experiment-specific settings
-EXPERIMENT_NAME = "fixed_sigma_100_Agents_no_sigmoid"
+EXPERIMENT_NAME = "SIRV_1000"
 
 def generate_parameter_grid():
     """Generate all parameter combinations for larger networks experiment"""
@@ -28,9 +28,7 @@ def get_base_param():
         "nei": 6,                       # More neighbors for larger network
         "p": 0.05,
         "N_steps": 5000,                # More steps for larger system
-        "waiting_time": 1000,           # 208 time steps = 52 days for the news about the virus to spread before the virus arrives
-                                        #December 31, 2019: China reported cluster in Wuhan
-                                        #February 21, 2020: First Italian COVID case diagnosed in Codogno (38-year-old Mattia Maestri)
+        "waiting_time": 1000,         
         "mu": 0.15,
         "epsilon": 0.3,
         "bot_threshold": -0.5,          # Will be overridden by grid
@@ -39,7 +37,12 @@ def get_base_param():
         "I0": 2,                        # More initial infected
         "communication_error": 0.3,     # Will be overridden by grid
         "post_history": 10,
-        "feed_size": 5
+        "feed_size": 5,
+
+        "disease_model": "SIRV",  # or "SIR" for original model
+        "xi_max": 0.05/4,  # Maximum daily vaccination probability (5% per day)
+        "use_discrete_vaccination": True,  # Match your susceptibility approach
+        "vaccination_groups": 5  # Number of discrete vaccination behavior groups
     }
 
 def read_run_directories():

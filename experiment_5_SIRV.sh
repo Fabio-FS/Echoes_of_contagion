@@ -19,4 +19,4 @@ conda activate networks
 cd src
 
 # Run the simulation with the array task ID
-python Experiment_4_fixed_sigma_1000_and_30_waiting.py $SLURM_ARRAY_TASK_ID
+python Experiment_5_SIRV.py $SLURM_ARRAY_TASK_ID

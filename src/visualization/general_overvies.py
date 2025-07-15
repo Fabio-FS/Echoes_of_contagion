@@ -136,7 +136,7 @@ def plot_bin_evolution_detailed(consolidated, figsize=(12, 8)):
 def plot_heatmap_grid(data_dict, param1_values=None, param2_values=None, 
                      param1_name="param1", param2_name="param2",
                      title="Opinion Distribution Evolution", figsize=None,
-                     param1_is_rows=True, max_time_steps=None):
+                     param1_is_rows=True, max_time_steps=None, bar = False, xticks = None, yticks = None):
     """
     Generic function to plot heatmaps of opinion bin trajectories in a grid.
     
@@ -159,7 +159,14 @@ def plot_heatmap_grid(data_dict, param1_values=None, param2_values=None,
                      param2_values=[-0.9, 0, 0.9],  
                      param1_name="var", param2_name="mean")
     """
-    
+    opinion_values = yticks
+    bin_indices = []
+    for val in opinion_values:
+        # Find which bin this opinion value falls into
+        bin_idx = int((val + 1) / 0.1)  # Each bin is 0.1 wide, starting from -1
+        bin_idx = np.clip(bin_idx, 0, 19)  # Keep within valid range
+        bin_indices.append(bin_idx)
+    yticks = bin_indices
     # Auto-detect parameters if not provided
     if param1_values is None or param2_values is None:
         # Extract all unique parameter values from keys
@@ -279,27 +286,30 @@ def plot_heatmap_grid(data_dict, param1_values=None, param2_values=None,
                               cmap='viridis', interpolation='none', vmin=0, vmax=0.35)
                 
                 # Add colorbar for rightmost plots
-                if j == n_cols - 1:
+                if j == n_cols - 1 and bar:
                     cbar = plt.colorbar(im, ax=ax, shrink=0.8)
                     cbar.set_label('Fraction of Agents', rotation=270, labelpad=15)
                 
                 # Set title
-                if col_val is None:
-                    title_str = f'{row_name} = {row_val}\npolarization var = {polarization_var:.3f}{time_title_suffix}'
-                elif row_val is None:
-                    title_str = f'{col_name} = {col_val}\npolarization var = {polarization_var:.3f}{time_title_suffix}'
+                if title is not None:
+                    if col_val is None:
+                        title_str = f'{row_name} = {row_val}\npolarization var = {polarization_var:.3f}{time_title_suffix}'
+                    elif row_val is None:
+                        title_str = f'{col_name} = {col_val}\npolarization var = {polarization_var:.3f}{time_title_suffix}'
+                    else:
+                        title_str = f'{row_name} = {row_val}, {col_name} = {col_val}\npolarization var = {polarization_var:.3f}{time_title_suffix}'
+                    ax.set_title(title_str, fontsize=10)
+                if yticks is None:
+                    # Set y-axis labels to show bin ranges
+                    bin_edges = consolidated['bin_edges']
+                    n_bins = len(bin_edges) - 1
+                    tick_positions = np.arange(0, n_bins, 2)  # Show every other bin
+                    tick_labels = [f'[{bin_edges[i]:.1f},{bin_edges[i+1]:.1f})' for i in tick_positions]
+                    ax.set_yticks(tick_positions)
+                    ax.set_yticklabels(tick_labels, fontsize=8)
                 else:
-                    title_str = f'{row_name} = {row_val}, {col_name} = {col_val}\npolarization var = {polarization_var:.3f}{time_title_suffix}'
-                ax.set_title(title_str, fontsize=10)
-                
-                # Set y-axis labels to show bin ranges
-                bin_edges = consolidated['bin_edges']
-                n_bins = len(bin_edges) - 1
-                tick_positions = np.arange(0, n_bins, 2)  # Show every other bin
-                tick_labels = [f'[{bin_edges[i]:.1f},{bin_edges[i+1]:.1f})' for i in tick_positions]
-                ax.set_yticks(tick_positions)
-                ax.set_yticklabels(tick_labels, fontsize=8)
-            
+                    ax.set_yticks(yticks)
+                    ax.set_yticklabels([str(val) for val in yticks], fontsize=18)
             else:
                 ax.text(0.5, 0.5, f'Missing\nData', ha='center', va='center', 
                        transform=ax.transAxes, fontsize=12, color='red')
@@ -319,26 +329,6 @@ def plot_heatmap_grid(data_dict, param1_values=None, param2_values=None,
 
 
 
-def calculate_polarization_variance(consolidated):
-    """
-    Calculate the variance of the meta-distribution (averaged across replicas).
-    This measures true polarization of the consensus outcome.
-    """
-    # Get bin centers from bin edges
-    bin_edges = consolidated['bin_edges']
-    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-    
-    # Get the final time step averaged distribution across all replicas
-    final_avg_distribution = np.mean(consolidated['opinion_bins'][:, -1, :], axis=0)
-    
-    # Calculate variance of this meta-distribution
-    # Var(X) = E[X²] - (E[X])²
-    mean_opinion = np.sum(final_avg_distribution * bin_centers)
-    mean_squared = np.sum(final_avg_distribution * (bin_centers**2))
-    
-    polarization_variance = mean_squared - mean_opinion**2
-    
-    return polarization_variance
 
 def load_simulation_data(data_dir, file_pattern, param_names, date_suffix="None"):
     """
@@ -621,7 +611,7 @@ def plot_epidemic_grid(data_dict, param1_values=None, param2_values=None,
 def plot_epidemic_heatmap(data_dict, param1_values=None, param2_values=None, 
                          param1_name="param1", param2_name="param2",
                          title="Final Attack Rate: Median Fraction Infected", figsize=None,
-                         param1_is_rows=True):
+                         param1_is_rows=True, color_map = 'hot_r', xticks = None, yticks = None):
     """
     Plot heatmap of final attack rates (median fraction infected at equilibrium).
     
@@ -696,7 +686,7 @@ def plot_epidemic_heatmap(data_dict, param1_values=None, param2_values=None,
                 # Calculate final attack rate (median across replicas)
                 infected_plus_recovered = consolidated['I_count'] + consolidated['R_count']
                 final_infected_recovered = infected_plus_recovered[:, -1]  # Last time step for each replica
-                mean_final = np.mean(final_infected_recovered)
+                mean_final = np.median(final_infected_recovered)
                 
                 # Convert to fraction
                 attack_rate_fraction = mean_final / consolidated['parameters']['n_humans']
@@ -710,15 +700,23 @@ def plot_epidemic_heatmap(data_dict, param1_values=None, param2_values=None,
     fig, ax = plt.subplots(figsize=figsize)
     
     # Create heatmap
-    im = ax.imshow(attack_rate_matrix, cmap='viridis', aspect='auto', 
+    im = ax.imshow(attack_rate_matrix, cmap=color_map, aspect='auto', 
                    vmin=0, vmax=1, interpolation='nearest')
     
     # Set ticks and labels
-    ax.set_xticks(range(n_cols))
-    ax.set_yticks(range(n_rows))
-    ax.set_xticklabels([str(val) for val in col_values])
-    ax.set_yticklabels([str(val) for val in row_values])
-    
+    if xticks is None:
+        ax.set_xticks(range(n_cols))
+        ax.set_xticklabels([str(val) for val in col_values])
+    else:
+        ax.set_xticks(xticks)
+        ax.set_xticklabels([str(val) for val in xticks])
+    if yticks is None:
+        ax.set_yticks(range(n_rows))
+        ax.set_yticklabels([str(val) for val in row_values])
+    else:
+        ax.set_yticks(yticks)
+        ax.set_yticklabels([str(val) for val in yticks])
+
     # Add text annotations with percentages
     for i in range(n_rows):
         for j in range(n_cols):
