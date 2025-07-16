@@ -1,131 +1,141 @@
-# Social Network Opinion Dynamics with Bots
+# Social Media Opinion Dynamics and Disease Spread
 
-A computational model simulating opinion formation and disease spread in social networks with both human users and automated bots.
+A simulation framework studying how social media algorithms and bot networks influence opinion polarization and disease transmission in networked populations.
 
-## Overview
+## Key Findings
 
-This simulation models how opinions evolve in a social network where:
-- **Humans** update their beliefs based on posts from neighbors (Bounded Confidence Model)
-- **Bots** systematically upvote content below a threshold to influence visibility
-- **Feed algorithm** shows users the most upvoted posts from their network
-- **Disease dynamics** spread based on opinion-influenced protective behaviors
+🔍 **Feed Algorithm Effects**: Popularity-based ranking stabilizes extreme opinions, while random feeds promote opinion diversity
 
-## Key Features
+🤖 **Bot Paradox**: Anti-mask bots create short-term polarization but paradoxically reduce disease spread through behavioral clustering
 
-- **Vectorized computation** using NumPy for performance
-- **Bounded Confidence Model** for human opinion updates
-- **Bot influence** through strategic upvoting of divisive content
-- **Realistic social media dynamics** with posts, upvotes, and personalized feeds
-- **Multiple simulation replicas** for statistical analysis
-- **Rich visualization suite** for analyzing results
+📊 **Opinion-Behavior Coupling**: Individual opinions directly influence mask-wearing behavior, creating feedback loops between social dynamics and epidemiological outcomes
 
-## Model Components
+## Model Overview
 
-### Network Structure
-- Watts-Strogatz small-world network for humans
-- Bots connected to random human subsets
-- Precomputed neighbor lists for efficiency
+The simulation combines three interconnected dynamics:
 
-### Opinion Dynamics
-- Humans post content reflecting their current opinion (with noise)
-- Feed algorithm ranks posts by upvotes
-- Humans read top posts from neighbors and update beliefs if within confidence bound
-- Bots automatically upvote posts below threshold
-
-### Disease Dynamics (Optional)
-- SIR model where protective behavior depends on opinion
-- More polarized individuals take fewer precautions
-- Disease transmission through network connections
-
-## Installation
-
-```bash
-pip install igraph numpy numba matplotlib pickle
-```
+- **Network Structure**: Watts-Strogatz small-world networks with humans and bots
+- **Opinion Dynamics**: Bounded confidence model with social media post sharing
+- **Disease Dynamics**: SIR model where transmission rates depend on mask-wearing behavior
 
 ## Quick Start
 
 ```python
-from network_generator import simulations, save_results
-from observables_plot import plot_multiple_replicas
+from simulation import run_and_save_simulation
 
-# Define parameters
+# Basic parameter set
 param = {
-    "n_humans": 450,
-    "n_bots": 50, 
-    "N_steps": 1000,
-    "n_of_replicas": 5,
-    "nei": 6,  # initial neighbors in Watts-Strogatz
-    "p": 0.05,  # rewiring probability
-    "mu": 0.075,  # opinion update rate
-    "epsilon": 0.3,  # confidence bound
-    "bot_threshold": -0.5,  # bots upvote posts below this
-    "communication_error": 0.2,  # noise in posts
-    "post_history": 10,  # posts remembered
-    "feed_size": 5,  # posts shown per round
-    "beta0" : 0.0125*4,
-    "recovery_rate" : 0.025*4,
-    "I0": 1  # initial infected
+    "n_humans": 100,
+    "n_bots": 20, 
+    "nei": 4,
+    "p": 0.1,
+    "N_steps": 5000,
+    "n_of_replicas": 10,
+    "feed_algorithm": "popularity",  # or "random"
+    "beta0": 0.1,
+    "recovery_rate": 0.05,
+    "bot_threshold": -0.5
 }
 
 # Run simulation
-results = simulations(param)
-
-# Plot results
-fig, axes, final_infection = plot_multiple_replicas(results, param)
-
-# Save for later analysis  
-save_results(results, param)
+results, analysis = run_and_save_simulation(param)
+print(f"Final opinion: {analysis['mean_final_opinion']:.3f}")
 ```
 
-## File Structure
+## Core Components
 
-- `network_generator.py` - Main simulation engine
-- `observables_plot.py` - Visualization functions
-- `results/` - Saved simulation outputs
+### Network (`network.py`)
+- Creates small-world networks with bot connections
+- Supports flexible opinion initialization (uniform, gaussian, bimodal)
+- Precomputes neighbor relationships for performance
+
+### Opinion Dynamics (`opinion_dynamic.py`)
+- Bounded confidence model with communication noise
+- Social media feed algorithms (popularity vs random)
+- Post generation, reading, and upvoting mechanics
+- Bots contribution, upvoting posts below threshold
+
+### Disease Dynamics (`disease_dynamics.py`) 
+- SIR model with opinion-dependent transmission rates
+- Discrete behavioral groups for computational efficiency
+- Vectorized infection/recovery calculations
+
+### Feed Algorithms (`feed_algorithms.py`)
+- **Popularity**: Global ranking by upvotes, personalized by network
+- **Random**: Uniform sampling from neighbor posts
+- **Similarity**: Content-based filtering (extensible)
 
 ## Key Parameters
 
 | Parameter | Description | Typical Range |
 |-----------|-------------|---------------|
-| `n_humans` | Number of human users | 50-500 |
-| `n_bots` | Number of bots | 0-100 |
-| `mu` | Opinion update strength | 0.05-0.2 |
-| `epsilon` | Confidence bound | 0.1-0.5 |
-| `bot_threshold` | Bot upvoting threshold | -1.0 to 0.0 |
-| `feed_size` | Posts per user per round | 1-10 |
+| `n_humans` | Population size | 50-1000 |
+| `n_bots` | Number of bots | 0-64 |
+| `feed_algorithm` | "popularity", "random" | - |
+| `bot_threshold` | Bot upvoting threshold | -0.8 to 0.8 |
+| `epsilon` | Confidence bound | 0.3 |
+| `mu` | Opinion update rate | 0.15 |
 
-## Visualization Options
+## Experimental Design
 
-- `plot_multiple_replicas()` - Overview of all replicas
-- `plot_trajectories_2x4()` - Individual user trajectories  
-- `plot_opinion_space_simple()` - Phase space trajectories
-- `plot_multiple_replicas_3x3()` - Detailed multi-replica view
+The framework supports systematic parameter sweeps:
 
-## Research Applications
+```python
+# Example: Bot influence study
+bot_counts = [0, 10, 20, 50]
+algorithms = ["popularity", "random"]
 
-This model can investigate:
-- **Bot influence** on opinion polarization
-- **Feed algorithm effects** on information spread
-- **Public health messaging** effectiveness
-- **Echo chamber formation** in social media
-- **Intervention strategies** for misinformation
+for n_bots in bot_counts:
+    for algo in algorithms:
+        param["n_bots"] = n_bots
+        param["feed_algorithm"] = algo
+        results = run_and_save_simulation(param)
+        # Analyze polarization vs disease spread
+```
 
-## Performance Notes
+## Output Data
 
-- Uses JIT compilation (Numba) for critical loops
-- Vectorized operations for array processing
-- Precomputed neighbor lookups for efficiency
-- Scales to networks of 1000+ nodes
+Results include both aggregate time series and individual trajectories:
+
+- **Epidemiological**: S/I/R counts, infection rates
+- **Opinion**: Mean, variance, distribution bins
+- **Individual**: Full opinion trajectories for first 5 replicas
+- **Network**: Static structure and dynamic post interactions
+
+## Performance Features
+
+- **Vectorized Operations**: NumPy-based calculations for 10x+ speedup
+- **JIT Compilation**: Numba acceleration for critical functions  
+- **Memory Efficiency**: Selective trajectory saving, compressed data types
+- **Scalability**: Handles 1000+ agents, 10K+ time steps
+
+## Dependencies
+
+```
+numpy >= 1.20
+igraph >= 0.9
+numba >= 0.56
+pickle (standard library)
+```
 
 ## Citation
 
-If you use this code in research, please cite:
+If you use this code, please cite:
 
 ```
-[Your citation format here]
+[Author et al.] "Social Media Algorithms and Disease Dynamics: 
+The Paradoxical Effects of Bot Networks on Opinion Polarization 
+and Epidemic Spread" [Conference/Journal] (2025)
 ```
 
 ## License
 
-[Your chosen license]
+MIT License - see LICENSE file for details.
+
+## Contact
+
+fabio.sartori@kit.edu
+
+---
+
+*This research explores the complex interplay between information dynamics and public health in the digital age.*

@@ -10,6 +10,11 @@ def initialize_system(param):
     initialize_users_and_bots(g, param)
     #g["meshgrids"] = precompute_meshgrids(g, param["post_history"])
     g["current_time_index"] = 0
+
+    
+    
+
+
     
     neighbor_lookup = np.zeros((len(g.vs), g["n_humans"]), dtype=bool)
     for i in range(len(g.vs)):
@@ -108,12 +113,27 @@ def initialize_users_and_bots(g, param):
     g["O0"] = 0.0 
     g["behavior_strength"] = 2.0
 
+
+
+
+
     # disease bits
     g.vs['health_state'] = [0] * param["n_humans"] + [-1] * param["n_bots"]  # All human start susceptible, all bots start bots. # S=0, I=1, R=2, Bot=-1
-    
+
+
+    g["disease_model"] = param["disease_model"] if "disease_model" in param.attributes() else "SIR"
+    if(g["disease_model"] == "SIRV"):
+        g["xi_max"] = param["xi_max"]
+        g["use_discrete_vaccination"] = param["use_discrete_vaccination"]
+        g["vaccination_groups"] = param["vaccination_groups"]
+
     g["beta0"] = param["beta0"] #0.1
     g["recovery_rate"] = param["recovery_rate"]
     g["waiting_time"] = param["waiting_time"]
+
+
+
+
 
     # select I0 initial infected
     indx_inf = np.random.choice(param["n_humans"], param["I0"], replace=False)

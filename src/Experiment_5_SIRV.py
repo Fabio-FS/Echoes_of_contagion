@@ -39,7 +39,7 @@ def get_base_param():
         "post_history": 10,
         "feed_size": 5,
 
-        "disease_model": "SIRV",  # or "SIR" for original model
+        "disease_model": "SIRV",        # or "SIR" for original model
         "xi_max": 0.05/4,  # Maximum daily vaccination probability (5% per day)
         "use_discrete_vaccination": True,  # Match your susceptibility approach
         "vaccination_groups": 5  # Number of discrete vaccination behavior groups

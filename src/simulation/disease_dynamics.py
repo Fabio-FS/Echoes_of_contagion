@@ -76,7 +76,7 @@ def run_SIRV_step(graph):
     """SIRV step with vaccination, infection, and recovery"""
     health_states = np.array(graph.vs['health_state'][:graph["n_humans"]])
     
-    # Early exit if no infected
+    # Early exit if no infected. People won't be vaccinated anymore if there are no infected.
     if np.sum(health_states == 1) == 0:
         return
     
@@ -116,29 +116,13 @@ def run_SIRV_step(graph):
     new_infections = np.where(susceptible_mask & (randoms < infection_prob))[0]
     
     # ==================== APPLY STATE CHANGES ====================
-    # Apply in order: vaccination, recovery, infection
-    # Note: Use separate random numbers to avoid conflicts
-    vaccination_randoms = np.random.rand(graph["n_humans"])
-    health_states[susceptible_mask & (vaccination_randoms < vaccination_probs)] = 3  # V
+    # Apply in order: vaccination -> infection
+    # In this way if a person is vaccinated at time t, they will be immune at time t+1, but
+    # they can still get infected at time t.
     
-    # Update masks after vaccination
-    health_states = np.array(graph.vs['health_state'][:graph["n_humans"]])  # Refresh
-    infected_mask = (health_states == 1)
-    susceptible_mask = (health_states == 0)  # Update after vaccinations
-    
-    recovery_randoms = np.random.rand(graph["n_humans"])
-    health_states[infected_mask & (recovery_randoms < recovery_rate)] = 2  # R
-    
-    # Update again after recovery
-    health_states = np.array(graph.vs['health_state'][:graph["n_humans"]])
-    susceptible_mask = (health_states == 0)
-    
-    infection_randoms = np.random.rand(graph["n_humans"])
-    for i in range(graph["n_humans"]):
-        if susceptible_mask[i]:
-            n_infected = np.sum(health_states[graph.vs[i]['human_neighbors']] == 1)
-            if infection_randoms[i] < 1 - np.power((1 - beta0), n_infected):
-                health_states[i] = 1  # I
+    health_states[new_vaccinations] = 3  # new vaccinated people
+    health_states[new_infections] = 1  # new infected people
+    health_states[new_recoveries] = 2  # new recovered people
     
     # Store final states
     graph.vs["health_state"] = list(health_states) + [-1] * graph["n_bots"]
@@ -147,11 +131,13 @@ def run_SIRV_step(graph):
 
 def disease_dynamic_step(graph):
     """Main disease step with model selection"""
-    disease_model = graph["disease_model"] if "disease_model" in graph.attributes() else "SIR"
     
-    if disease_model == "SIRV":
+    
+    if graph["disease_model"] == "SIRV":
+        print("SIRV")
         disease_dynamic_step_SIRV(graph)
     else:  # SIR (default)
+        print("SIR")
         disease_dynamic_step_SIR(graph)
 
 def disease_dynamic_step_SIR(graph):
