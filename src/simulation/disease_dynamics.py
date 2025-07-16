@@ -134,10 +134,8 @@ def disease_dynamic_step(graph):
     
     
     if graph["disease_model"] == "SIRV":
-        print("SIRV")
         disease_dynamic_step_SIRV(graph)
     else:  # SIR (default)
-        print("SIR")
         disease_dynamic_step_SIR(graph)
 
 def disease_dynamic_step_SIR(graph):

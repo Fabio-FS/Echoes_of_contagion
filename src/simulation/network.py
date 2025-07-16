@@ -120,8 +120,7 @@ def initialize_users_and_bots(g, param):
     # disease bits
     g.vs['health_state'] = [0] * param["n_humans"] + [-1] * param["n_bots"]  # All human start susceptible, all bots start bots. # S=0, I=1, R=2, Bot=-1
 
-
-    g["disease_model"] = param["disease_model"] if "disease_model" in param.attributes() else "SIR"
+    g["disease_model"] = param.get("disease_model", "SIR")
     if(g["disease_model"] == "SIRV"):
         g["xi_max"] = param["xi_max"]
         g["use_discrete_vaccination"] = param["use_discrete_vaccination"]
