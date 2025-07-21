@@ -78,6 +78,7 @@ def run_SIRV_step(graph):
     
     # Early exit if no infected. People won't be vaccinated anymore if there are no infected.
     if np.sum(health_states == 1) == 0:
+        print ("no infected")
         return
     
     randoms = np.random.rand(graph["n_humans"])

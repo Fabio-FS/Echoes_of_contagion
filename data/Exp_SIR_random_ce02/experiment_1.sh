@@ -15,8 +15,5 @@ mkdir -p logs
 source /opt/bwhpc/common/devel/miniforge/24.11.0-py3.12/etc/profile.d/conda.sh
 conda activate networks
 
-# Navigate to src directory  
-cd src
-
 # Run the simulation with the array task ID
-python Experiment_3_IC_consensus.py $SLURM_ARRAY_TASK_ID
+python RUNME.py $SLURM_ARRAY_TASK_ID
